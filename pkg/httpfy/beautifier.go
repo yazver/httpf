@@ -7,6 +7,8 @@ import (
 	"io"
 	"net/textproto"
 	"strings"
+
+	"github.com/gotidy/httpf/pkg/termite/color"
 )
 
 type ErrIO struct {
@@ -98,15 +100,15 @@ func New(dst io.Writer, src io.Reader, opts ...Option) *HTTPfy {
 	return h
 }
 
-func (h *HTTPfy) writeString(s string, color Color) error {
-	if h.colorize && color != Undefined {
-		s = string(color) + s + string(Reset)
+func (h *HTTPfy) writeString(s string, c color.Color) error {
+	if h.colorize && c != color.Undefined {
+		s = string(c) + s + string(color.Reset)
 	}
 	_, err := h.dst.Write([]byte(s))
 	return NewErrIO(err)
 }
 
-func (h *HTTPfy) writeBytes(b []byte, color Color) error {
+func (h *HTTPfy) writeBytes(b []byte, color color.Color) error {
 	return h.writeString(string(b), color)
 }
 
@@ -126,16 +128,16 @@ func (h *HTTPfy) header() (empty bool, err error) {
 	}
 
 	if isEmpty(b) {
-		return true, h.writeBytes(b, Undefined)
+		return true, h.writeBytes(b, color.Undefined)
 	}
 
 	if spaceStarted(b) {
-		return false, h.writeBytes(b, Undefined)
+		return false, h.writeBytes(b, color.Undefined)
 	}
 
 	i := bytes.IndexByte(b, ':')
 	if i < 0 {
-		return false, h.writeBytes(b, Undefined)
+		return false, h.writeBytes(b, color.Undefined)
 	}
 
 	key := b[:i]
@@ -170,7 +172,7 @@ func (h *HTTPfy) header() (empty bool, err error) {
 		}
 	}
 
-	if err := h.writeString("\n", Undefined); err != nil {
+	if err := h.writeString("\n", color.Undefined); err != nil {
 		return false, err
 	}
 
@@ -184,23 +186,23 @@ func (h *HTTPfy) protocol() (continueStatus bool, err error) {
 	}
 
 	if !bytes.HasPrefix(b, []byte("HTTP")) {
-		_ = h.writeBytes(b, Undefined)
+		_ = h.writeBytes(b, color.Undefined)
 		return false, NewErrUnrecognizedFormat(string(b))
 	}
 
 	parts := strings.Fields(string(b))
 	if len(parts) < 2 {
-		_ = h.writeBytes(b, Undefined)
+		_ = h.writeBytes(b, color.Undefined)
 		return false, NewErrUnrecognizedFormat(string(b))
 	}
 
-	if err := h.writeString(parts[0], Undefined); err != nil {
+	if err := h.writeString(parts[0], color.Undefined); err != nil {
 		return false, err
 	}
 
 	statusColor := h.Colors.StatusColor(parts[1])
 	for i := 1; i < len(parts); i++ {
-		if err := h.writeString(" ", Undefined); err != nil {
+		if err := h.writeString(" ", color.Undefined); err != nil {
 			return false, err
 		}
 		if err := h.writeString(parts[i], statusColor); err != nil {
@@ -208,7 +210,7 @@ func (h *HTTPfy) protocol() (continueStatus bool, err error) {
 		}
 	}
 
-	if err := h.writeString("\n", Undefined); err != nil {
+	if err := h.writeString("\n", color.Undefined); err != nil {
 		return false, err
 	}
 
