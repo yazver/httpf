@@ -12,7 +12,7 @@ func (c Color) Apply(to string) string {
 }
 
 func (c Color) With(color ...Color) Color {
-	return c + Fuse(color...)
+	return c + New(color...)
 }
 
 const (
@@ -578,7 +578,7 @@ const (
 	BgXGrey93            Color = "\u001b[48;5;255m" // "hex":"#eeeeee"; "rgb": ("r":238,"g":238,"b":238)
 )
 
-func Fuse(colors ...Color) Color {
+func New(colors ...Color) Color {
 	b := strings.Builder{}
 	b.Grow(len(colors) * 11)
 	for _, color := range colors {

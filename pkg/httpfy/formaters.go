@@ -1,17 +1,12 @@
 package httpfy
 
 import (
-	"fmt"
 	"io"
 	"strings"
-)
 
-type TokenFormater interface {
-	Identifier(s string) string
-	String(s string) string
-	Number(s string) string
-	Symbol(s string) string
-}
+	"github.com/gotidy/httpf/pkg/fy"
+	"github.com/gotidy/httpf/pkg/jsonfy"
+)
 
 type ContentType string
 
@@ -33,37 +28,40 @@ func GetContentType(contentType string) ContentType {
 	return contentTypes[strings.ToLower(strings.TrimSpace(contentType))]
 }
 
-var formaters = map[ContentType]func(dst io.Writer, src io.Reader, formater TokenFormater) error{
-	ContentHTML:    htmlFormater,
-	ContentXML:     xmlFormater,
-	ContentJSON:    jsonFormater,
-	ContentUnknown: unknownFormater,
+var formatters = map[ContentType]func(dst io.Writer, src io.Reader, formatter fy.Formatter) error{
+	ContentHTML:    htmlFormatter,
+	ContentXML:     xmlFormatter,
+	ContentJSON:    jsonFormatter,
+	ContentUnknown: unknownFormatter,
 }
 
-func jsonFormater(dst io.Writer, src io.Reader, formater TokenFormater) error {
+func jsonFormatter(dst io.Writer, src io.Reader, formatter fy.Formatter) error {
+	// _, err := io.Copy(dst, src)
+	return jsonfy.Format(src, fy.New(dst, formatter))
+}
+
+func htmlFormatter(dst io.Writer, src io.Reader, formatter fy.Formatter) error {
 	_, err := io.Copy(dst, src)
 	return err
 }
 
-func htmlFormater(dst io.Writer, src io.Reader, formater TokenFormater) error {
+func xmlFormatter(dst io.Writer, src io.Reader, formatter fy.Formatter) error {
 	_, err := io.Copy(dst, src)
 	return err
 }
 
-func xmlFormater(dst io.Writer, src io.Reader, formater TokenFormater) error {
+func unknownFormatter(dst io.Writer, src io.Reader, formatter fy.Formatter) error {
 	_, err := io.Copy(dst, src)
 	return err
 }
 
-func unknownFormater(dst io.Writer, src io.Reader, formater TokenFormater) error {
-	_, err := io.Copy(dst, src)
-	return err
-}
-
-func Format(dst io.Writer, src io.Reader, typ ContentType, formater TokenFormater) error {
-	f := formaters[typ]
+func Format(dst io.Writer, src io.Reader, typ ContentType, formatter fy.Formatter) error {
+	f := formatters[typ]
 	if f == nil {
-		return fmt.Errorf("formater for context type «%s» is not founded", typ)
+		f = unknownFormatter
 	}
-	return f(dst, src, formater)
+	if err := f(dst, src, formatter); err != nil && err != io.EOF {
+		return err
+	}
+	return nil
 }

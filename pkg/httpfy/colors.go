@@ -1,26 +1,35 @@
 package httpfy
 
-import "github.com/gotidy/httpf/pkg/termite/color"
+import (
+	"strings"
+
+	"github.com/gotidy/httpf/pkg/termite/color"
+)
 
 type HTTP struct {
-	HeaderName color.Color
-	Status100  color.Color // 1xx statuses
-	Status200  color.Color // 2xx statuses
-	Status300  color.Color // 3xx statuses
-	Status400  color.Color // 4xx statuses
-	Status500  color.Color // 5xx statuses
+	HeaderKey color.Color
+	Status100 color.Color // 1xx statuses
+	Status200 color.Color // 2xx statuses
+	Status300 color.Color // 3xx statuses
+	Status400 color.Color // 4xx statuses
+	Status500 color.Color // 5xx statuses
 }
 
-type TokensColors struct {
+type TokensFormat struct {
 	Identifier color.Color
-	String     color.Color
-	Number     color.Color
 	Symbol     color.Color
 	Brackets   color.Color
+	String     color.Color
+	Number     color.Color
+	Bool       color.Color
+	Null       color.Color
+
+	Indent  int
+	NewLine string
 }
 
 type Colors struct {
-	Tokens TokensColors
+	Tokens TokensFormat
 	HTTP   HTTP
 }
 
@@ -36,12 +45,32 @@ func (c Colors) Number(s string) string {
 	return color.Colorize(s, c.Tokens.Number)
 }
 
+func (c Colors) Bool(s string) string {
+	return color.Colorize(s, c.Tokens.Bool)
+}
+
+func (c Colors) Null(s string) string {
+	return color.Colorize(s, c.Tokens.Null)
+}
+
 func (c Colors) Symbol(s string) string {
 	return color.Colorize(s, c.Tokens.Symbol)
 }
 
 func (c Colors) Brackets(s string) string {
 	return color.Colorize(s, c.Tokens.Brackets)
+}
+
+func (c Colors) Unknown(s string) string {
+	return s
+}
+
+func (c Colors) Indent(level int) string {
+	return strings.Repeat(" ", c.Tokens.Indent*level)
+}
+
+func (c Colors) NewLine() string {
+	return c.Tokens.NewLine
 }
 
 func (c Colors) StatusColor(status string) color.Color {
@@ -85,18 +114,23 @@ func (c Colors) Status(s, status string) string {
 }
 
 func (c Colors) Header(s, status string) string {
-	return color.Colorize(s, c.HTTP.HeaderName)
+	return color.Colorize(s, c.HTTP.HeaderKey)
 }
 
 var DefaultColors = Colors{
-	Tokens: TokensColors{
-		Identifier: color.Green,
+	Tokens: TokensFormat{
+		Identifier: color.BrightBlue,
 		String:     color.White,
-		Number:     color.Magenta,
+		Number:     color.BrightMagenta,
 		Symbol:     color.BrightRed,
 		Brackets:   color.White,
+		Bool:       color.BrightYellow,
+		Null:       color.BrightBlack,
+		Indent:     4,
+		NewLine:    "\n",
 	},
 	HTTP: HTTP{
+		HeaderKey: color.BrightGreen,
 		Status100: color.White,
 		Status200: color.Green,
 		Status300: color.Yellow,
@@ -106,9 +140,19 @@ var DefaultColors = Colors{
 }
 
 type MonoColors struct {
+	indent  int
+	newline string
 }
 
 func (c MonoColors) Identifier(s string) string {
+	return s
+}
+
+func (c MonoColors) Symbol(s string) string {
+	return s
+}
+
+func (c MonoColors) Brackets(s string) string {
 	return s
 }
 
@@ -120,10 +164,22 @@ func (c MonoColors) Number(s string) string {
 	return s
 }
 
-func (c MonoColors) Symbol(s string) string {
+func (c MonoColors) Bool(s string) string {
 	return s
 }
 
-func (c MonoColors) Brackets(s string) string {
+func (c MonoColors) Null(s string) string {
 	return s
+}
+
+func (c MonoColors) Unknown(s string) string {
+	return s
+}
+
+func (c MonoColors) Indent(level int) string {
+	return strings.Repeat(" ", c.indent*level)
+}
+
+func (c MonoColors) NewLine() string {
+	return c.newline
 }

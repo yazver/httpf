@@ -8,6 +8,7 @@ import (
 	"net/textproto"
 	"strings"
 
+	"github.com/gotidy/httpf/pkg/fy"
 	"github.com/gotidy/httpf/pkg/termite/color"
 )
 
@@ -147,7 +148,7 @@ func (h *HTTPfy) header() (empty bool, err error) {
 	if h.beautify {
 		key = []byte(textproto.CanonicalMIMEHeaderKey(string(key)))
 	}
-	if err := h.writeBytes(key, h.Colors.Tokens.Identifier); err != nil { // HTTP.HeaderName
+	if err := h.writeBytes(key, h.Colors.HTTP.HeaderKey); err != nil { // HTTP.HeaderName
 		return false, err
 	}
 
@@ -249,11 +250,11 @@ header:
 		}
 	}
 
-	var tokenFormater TokenFormater = MonoColors{}
+	var tokenFormatter fy.Formatter = MonoColors{}
 	if h.colorize {
-		tokenFormater = h.Colors
+		tokenFormatter = h.Colors
 	}
-	return Format(h.dst, h.src, h.contentType, tokenFormater)
+	return Format(h.dst, h.src, h.contentType, tokenFormatter)
 }
 
 func isEmpty(b []byte) bool {
